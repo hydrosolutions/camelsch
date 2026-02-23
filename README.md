@@ -1,9 +1,8 @@
 # camelsch
 
 [![CI](https://github.com/mabesa/camelsch/actions/workflows/ci.yml/badge.svg)](https://github.com/mabesa/camelsch/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/mabesa/camelsch/branch/main/graph/badge.svg)](https://codecov.io/gh/mabesa/camelsch)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)](https://www.python.org)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mabesa/camelsch/main?labpath=demo.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mabesa/camelsch/HEAD?labpath=demo.ipynb)
 
 CLI tool for downloading, exploring, and extracting data from the [CAMELS-CH](https://zenodo.org/records/15025258) hydrological dataset (331 Swiss basins, 1981-2020).
 
