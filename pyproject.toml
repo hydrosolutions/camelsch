@@ -1,0 +1,68 @@
+[project]
+name = "camelsch"
+version = "0.1.0"
+description = "CLI tool for extracting and working with CAMELS-CH hydrological data"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Beatrice Marti", email = "mabesa@users.noreply.github.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "pyarrow>=14.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/mabesa/camelsch"
+Repository = "https://github.com/mabesa/camelsch"
+Issues = "https://github.com/mabesa/camelsch/issues"
+
+[project.scripts]
+camelsch = "camelsch.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 99
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM", "RUF"]
+ignore = ["B008"]  # typer.Option() in defaults is the standard typer pattern
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = ["pyarrow"]
+ignore_missing_imports = true
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.10",
+    "pandas-stubs>=2.0",
+    "pytest>=9.0.2",
+    "pytest-cov>=6.0",
+    "ruff>=0.15.2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "src"]
+addopts = "--doctest-modules"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.10",
+    "pandas-stubs>=2.0",
+    "pytest>=9.0.2",
+    "pytest-cov>=6.0",
+    "ruff>=0.15.2",
+]

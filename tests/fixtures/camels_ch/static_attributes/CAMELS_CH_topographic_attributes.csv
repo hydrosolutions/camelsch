@@ -1,0 +1,6 @@
+# Topographic attributes for CAMELS-CH
+# Source: Höge et al. (2023)
+gauge_id,gauge_name,gauge_lat(deg),gauge_lon(deg),area(km2),elev_mean(m),country
+2004,"Zürich - Unterhard",47.3982,8.5182,77.5,556.0,CH
+2007,"Münster",46.4930,8.2655,52.3,2110.0,CH
+3001,"Bellinzona",46.1945,9.0170,1515.0,1670.0,CH

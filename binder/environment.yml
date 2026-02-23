@@ -1,0 +1,10 @@
+name: camelsch-demo
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pandas
+  - pyarrow
+  - jupyter
+  - matplotlib
+  - pip

@@ -1,0 +1,5 @@
+# Climate attributes for CAMELS-CH
+gauge_id,p_mean(mm/d),pet_mean(mm/d),aridity_index(-),t_mean(degC)
+2004,3.8,2.1,0.55,9.5
+2007,4.2,1.8,0.43,3.2
+3001,5.1,2.0,0.39,7.1
