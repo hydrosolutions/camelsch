@@ -16,9 +16,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mabesa/camelsch"
-Repository = "https://github.com/mabesa/camelsch"
-Issues = "https://github.com/mabesa/camelsch/issues"
+Homepage = "https://github.com/hydrosolutions/camelsch"
+Repository = "https://github.com/hydrosolutions/camelsch"
+Issues = "https://github.com/hydrosolutions/camelsch/issues"
 
 [project.scripts]
 camelsch = "camelsch.cli:app"
