@@ -6,6 +6,12 @@
 
 CLI tool for downloading, exploring, and extracting data from the [CAMELS-CH](https://zenodo.org/records/15025258) hydrological dataset (331 Swiss basins, 1981-2020).
 
+## Maintenance Status
+
+🟢 **Active** – Maintained by [hydrosolutions](https://github.com/hydrosolutions)
+
+---
+
 ## Installation
 
 ```bash
