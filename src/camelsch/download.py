@@ -98,10 +98,13 @@ def _extract_and_rename(zip_path: Path, dest: Path) -> None:
 
     # Auto-detect extracted folder (starts with "camels" or "CAMELS")
     for item in extract_to.iterdir():
-        if item.is_dir() and item.name.lower().startswith("camels") and item != dest:
+        if item.is_dir() and item.name.lower().startswith("camels"):
+            if item.resolve() == dest.resolve():
+                # Already in the right place (e.g. case-insensitive FS)
+                return
             if dest.exists():
                 shutil.rmtree(dest)
-            item.rename(dest)
+            shutil.move(str(item), str(dest))
             return
 
     # If extraction produced files directly (no subfolder), dest should already exist
