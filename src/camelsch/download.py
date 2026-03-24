@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import shutil
+import tempfile
 import zipfile
 from pathlib import Path
 from urllib.request import urlopen
@@ -66,48 +67,59 @@ def _validate_zip_members(zf: zipfile.ZipFile, target: Path) -> None:
     resolved = target.resolve()
     for member in zf.namelist():
         member_path = (target / member).resolve()
-        if not str(member_path).startswith(str(resolved) + "/") and member_path != resolved:
+        try:
+            member_path.relative_to(resolved)
+        except ValueError:
             msg = f"Zip member {member!r} would escape target directory"
-            raise ValueError(msg)
+            raise ValueError(msg) from None
 
 
 def _download_with_progress(url: str, zip_path: Path) -> None:
     """Download a file with a rich progress bar."""
-    response = urlopen(url, timeout=30)
-    total = int(response.headers.get("Content-Length", 0))
+    part_path = zip_path.with_suffix(".zip.part")
+    try:
+        response = urlopen(url, timeout=30)
+        total = int(response.headers.get("Content-Length", 0))
 
-    with Progress(
-        TextColumn("[bold blue]{task.description}"),
-        BarColumn(),
-        DownloadColumn(),
-        TransferSpeedColumn(),
-    ) as progress:
-        task = progress.add_task("Downloading CAMELS-CH", total=total or None)
-        with open(zip_path, "wb") as f:
-            while chunk := response.read(8192):
-                f.write(chunk)
-                progress.update(task, advance=len(chunk))
+        with Progress(
+            TextColumn("[bold blue]{task.description}"),
+            BarColumn(),
+            DownloadColumn(),
+            TransferSpeedColumn(),
+        ) as progress:
+            task = progress.add_task("Downloading CAMELS-CH", total=total or None)
+            with open(part_path, "wb") as f:
+                while chunk := response.read(8192):
+                    f.write(chunk)
+                    progress.update(task, advance=len(chunk))
+        part_path.rename(zip_path)
+    except BaseException:
+        part_path.unlink(missing_ok=True)
+        raise
 
 
 def _extract_and_rename(zip_path: Path, dest: Path) -> None:
-    """Extract zip and rename extracted folder to dest."""
-    extract_to = dest.parent
-    with zipfile.ZipFile(zip_path, "r") as zf:
-        _validate_zip_members(zf, extract_to)
-        zf.extractall(extract_to)
+    """Extract zip to a temp directory and move the result to dest."""
+    with tempfile.TemporaryDirectory(dir=dest.parent) as tmp:
+        tmp_path = Path(tmp)
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            _validate_zip_members(zf, tmp_path)
+            zf.extractall(tmp_path)
 
-    # Auto-detect extracted folder (starts with "camels" or "CAMELS")
-    for item in extract_to.iterdir():
-        if item.is_dir() and item.name.lower().startswith("camels"):
-            if item.resolve() == dest.resolve():
-                # Already in the right place (e.g. case-insensitive FS)
-                return
-            if dest.exists():
-                shutil.rmtree(dest)
-            shutil.move(str(item), str(dest))
-            return
+        # Auto-detect extracted folder (starts with "camels" or "CAMELS")
+        extracted = None
+        for item in tmp_path.iterdir():
+            if item.is_dir() and item.name.lower().startswith("camels"):
+                extracted = item
+                break
 
-    # If extraction produced files directly (no subfolder), dest should already exist
-    if not dest.exists():
-        msg = f"Could not find extracted CAMELS-CH folder in {extract_to}"
-        raise FileNotFoundError(msg)
+        if extracted is None:
+            if not any(tmp_path.iterdir()):
+                msg = "Could not find extracted CAMELS-CH folder in zip"
+                raise FileNotFoundError(msg)
+            # Files extracted flat into tmp — use the whole tmp dir
+            extracted = tmp_path
+
+        if dest.exists():
+            shutil.rmtree(dest)
+        shutil.move(str(extracted), str(dest))

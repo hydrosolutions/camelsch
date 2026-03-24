@@ -19,7 +19,7 @@ def _read_ts_csv(path: Path) -> pd.DataFrame:
 
     date_col = find_date_column(df)
     if date_col:
-        df[date_col] = pd.to_datetime(df[date_col])
+        df[date_col] = pd.to_datetime(df[date_col], format="%Y-%m-%d")
         if date_col != "date":
             df = df.rename(columns={date_col: "date"})
         df = df.set_index("date")
@@ -94,11 +94,25 @@ def load_basin_timeseries(data_dir: str | Path, basin_id: str) -> pd.DataFrame:
     if obs_dir:
         matches = list(obs_dir.glob(f"*_{basin_id}.csv"))
         if matches:
+            if len(matches) > 1:
+                logger.warning(
+                    "Multiple files match basin %s in %s, using %s",
+                    basin_id,
+                    obs_dir,
+                    matches[0].name,
+                )
             obs = _read_ts_csv(matches[0])
 
     if sim_dir:
         matches = list(sim_dir.glob(f"*_{basin_id}.csv"))
         if matches:
+            if len(matches) > 1:
+                logger.warning(
+                    "Multiple files match basin %s in %s, using %s",
+                    basin_id,
+                    sim_dir,
+                    matches[0].name,
+                )
             sim = _read_ts_csv(matches[0])
 
     if obs is None and sim is None:
@@ -113,6 +127,7 @@ def load_basin_timeseries(data_dir: str | Path, basin_id: str) -> pd.DataFrame:
     else:
         merged = sim  # both-None handled above
 
+    assert merged is not None
     return _add_aliases(merged)
 
 
@@ -152,12 +167,11 @@ def load_timeseries(
         if end_date:
             df = df.loc[:end_date]  # type: ignore[misc]
         if variables:
-            # Also include aliases if the base variable is requested
-            cols = []
-            for v in variables:
-                if v in df.columns:
-                    cols.append(v)
-            df = df[cols] if cols else df
+            cols = [v for v in variables if v in df.columns]
+            missing = [v for v in variables if v not in df.columns]
+            if missing:
+                logger.warning("Variables not found in basin %s: %s", bid, ", ".join(missing))
+            df = df[cols]
 
         result[bid] = df
 
@@ -198,4 +212,7 @@ def resample_annual(df: pd.DataFrame) -> pd.DataFrame:
             agg[col] = "sum"
         else:
             agg[col] = "mean"
-    return df.resample("YE").agg(agg)  # type: ignore[arg-type]
+    try:
+        return df.resample("YE").agg(agg)  # type: ignore[arg-type]
+    except ValueError:
+        return df.resample("A").agg(agg)  # type: ignore[arg-type]

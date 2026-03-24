@@ -18,7 +18,9 @@ def test_version_flag() -> None:
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
     assert "camelsch" in result.output
-    assert "0.2.0" in result.output
+    import camelsch
+
+    assert camelsch.__version__ in result.output
 
 
 def test_info_missing_data_suggests_download() -> None:
@@ -71,7 +73,8 @@ def test_attributes_stdout(data_dir: Path) -> None:
         app, ["attributes", "--data-dir", str(data_dir), "--basins", "2004,2007"]
     )
     assert result.exit_code == 0
-    assert "gauge_id" in result.output or "2004" in result.output
+    assert "gauge_id" in result.output
+    assert "2004" in result.output
 
 
 def test_attributes_to_file(data_dir: Path, tmp_path: Path) -> None:

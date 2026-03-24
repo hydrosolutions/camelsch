@@ -11,6 +11,7 @@ from camelsch.timeseries import (
     list_variables,
     load_basin_timeseries,
     load_timeseries,
+    resample_annual,
 )
 
 
@@ -104,3 +105,43 @@ def test_load_basin_not_found(data_dir: Path) -> None:
 
     with pytest.raises(FileNotFoundError):
         load_basin_timeseries(data_dir, "9999")
+
+
+def test_load_timeseries_unknown_variables_returns_empty_columns(data_dir: Path) -> None:
+    """Requesting only nonexistent variables returns DataFrame with 0 columns."""
+    result = load_timeseries(data_dir, basin_ids=["2004"], variables=["nonexistent"])
+    df = result["2004"]
+    assert df.columns.tolist() == []
+    assert len(df) == 5  # rows preserved
+
+
+def test_load_timeseries_partial_variable_match(data_dir: Path) -> None:
+    """Requesting a mix of valid and invalid variables returns only the valid ones."""
+    result = load_timeseries(
+        data_dir,
+        basin_ids=["2004"],
+        variables=["precipitation", "nonexistent"],
+    )
+    df = result["2004"]
+    assert list(df.columns) == ["precipitation"]
+    assert len(df) == 5
+
+
+def test_resample_annual_sum_vs_mean() -> None:
+    """resample_annual sums precipitation and averages temperature."""
+    dates = pd.date_range("2020-01-01", periods=365, freq="D")
+    df = pd.DataFrame(
+        {
+            "precipitation": [2.0] * 365,
+            "temperature_mean": [10.0] * 365,
+            "discharge_spec": [1.0] * 365,
+        },
+        index=dates,
+    )
+    result = resample_annual(df)
+    assert len(result) == 1
+    # precipitation and discharge should be summed
+    assert result["precipitation"].iloc[0] == 365 * 2.0
+    assert result["discharge_spec"].iloc[0] == 365 * 1.0
+    # temperature should be averaged
+    assert result["temperature_mean"].iloc[0] == 10.0

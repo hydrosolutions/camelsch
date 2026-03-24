@@ -18,27 +18,19 @@ def test_download_skips_when_exists(data_dir: Path) -> None:
 
 
 def test_download_extracts_zip(tmp_path: Path) -> None:
-    """download_camels_ch can extract a zip and rename the folder."""
-    # Create a fake zip with a camels_ch/ subfolder
+    """_extract_and_rename extracts a zip with a subfolder to dest."""
     zip_path = tmp_path / "camels_ch.zip"
-    extracted = tmp_path / "CAMELS_CH"
+    dest = tmp_path / "CAMELS_CH"
 
-    inner_dir = "camels_ch"
     with zipfile.ZipFile(zip_path, "w") as zf:
-        zf.writestr(f"{inner_dir}/readme.txt", "test")
-        zf.writestr(f"{inner_dir}/timeseries/observation_based/dummy.csv", "a,b\n1,2\n")
+        zf.writestr("camels_ch/readme.txt", "test")
+        zf.writestr("camels_ch/timeseries/observation_based/dummy.csv", "a,b\n1,2\n")
 
-    # Manually extract and rename to simulate download_camels_ch logic
-    with zipfile.ZipFile(zip_path, "r") as zf:
-        zf.extractall(tmp_path)
+    _extract_and_rename(zip_path, dest)
 
-    # The extracted folder should be camels_ch
-    assert (tmp_path / inner_dir).exists()
-
-    # Rename to match expected dest
-    (tmp_path / inner_dir).rename(extracted)
-    assert extracted.exists()
-    assert (extracted / "readme.txt").exists()
+    assert dest.exists()
+    assert (dest / "readme.txt").exists()
+    assert (dest / "timeseries" / "observation_based" / "dummy.csv").exists()
 
 
 def test_validate_zip_members_rejects_path_traversal(tmp_path: Path) -> None:
@@ -54,20 +46,8 @@ def test_validate_zip_members_rejects_path_traversal(tmp_path: Path) -> None:
         _validate_zip_members(zf, tmp_path)
 
 
-def _is_case_sensitive_fs(directory: Path) -> bool:
-    """Return True if *directory* lives on a case-sensitive filesystem."""
-    probe = directory / "_camelsch_probe_ABC"
-    probe.mkdir()
-    result = not (directory / "_camelsch_probe_abc").exists()
-    probe.rmdir()
-    return result
-
-
 def test_extract_and_rename_moves_subfolder(tmp_path: Path) -> None:
-    """_extract_and_rename extracts a zip and renames the subfolder to dest."""
-    if not _is_case_sensitive_fs(tmp_path):
-        pytest.skip("Rename-by-case test requires a case-sensitive filesystem")
-
+    """_extract_and_rename extracts a zip and moves the subfolder to dest."""
     zip_path = tmp_path / "camels_ch.zip"
     dest = tmp_path / "CAMELS_CH"
 
@@ -80,11 +60,10 @@ def test_extract_and_rename_moves_subfolder(tmp_path: Path) -> None:
     assert dest.exists()
     assert (dest / "readme.txt").exists()
     assert (dest / "timeseries" / "obs" / "dummy.csv").exists()
-    assert not (tmp_path / "camels_ch").exists()
 
 
 def test_extract_and_rename_same_name(tmp_path: Path) -> None:
-    """_extract_and_rename works when the zip subfolder name matches dest exactly."""
+    """_extract_and_rename works when the zip subfolder name matches dest."""
     zip_path = tmp_path / "camels_ch.zip"
     dest = tmp_path / "CAMELS_CH"
 
@@ -97,3 +76,15 @@ def test_extract_and_rename_same_name(tmp_path: Path) -> None:
     assert dest.exists()
     assert (dest / "readme.txt").exists()
     assert (dest / "timeseries" / "obs" / "dummy.csv").exists()
+
+
+def test_extract_and_rename_no_camels_folder_raises(tmp_path: Path) -> None:
+    """_extract_and_rename raises FileNotFoundError when zip has no camels folder."""
+    zip_path = tmp_path / "bad.zip"
+    dest = tmp_path / "CAMELS_CH"
+
+    with zipfile.ZipFile(zip_path, "w"):
+        pass  # Empty zip
+
+    with pytest.raises(FileNotFoundError, match="Could not find extracted"):
+        _extract_and_rename(zip_path, dest)

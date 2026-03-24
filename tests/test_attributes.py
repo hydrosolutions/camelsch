@@ -50,7 +50,7 @@ def test_load_attributes_handles_latin1(data_dir: Path) -> None:
     df = load_attributes(data_dir)
     # gauge_name for 2004 contains "Zürich" which needs Latin-1
     name = df.loc["2004", "gauge_name"]
-    assert "rich" in name.lower()
+    assert "zürich" in name.lower()
 
 
 def test_get_attribute_names(data_dir: Path) -> None:

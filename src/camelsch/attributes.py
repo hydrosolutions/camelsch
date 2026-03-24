@@ -63,6 +63,13 @@ def load_attributes(
         if merged is None:
             merged = df
         else:
+            dropped = [c for c in df.columns if c in merged.columns]
+            if dropped:
+                logger.warning(
+                    "Duplicate columns in %s (skipped): %s",
+                    csv_path.name,
+                    ", ".join(dropped),
+                )
             new_cols = [c for c in df.columns if c not in merged.columns]
             if new_cols:
                 merged = merged.join(df[new_cols], how="outer")

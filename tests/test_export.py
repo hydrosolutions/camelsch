@@ -21,6 +21,8 @@ def test_export_timeseries_csv_single(data_dir: Path, tmp_path: Path) -> None:
     assert output.exists()
     df = pd.read_csv(output, index_col=0, parse_dates=True)
     assert len(df) == 5
+    assert "discharge_spec" in df.columns
+    assert "precipitation" in df.columns
 
 
 def test_export_timeseries_csv_multi(data_dir: Path, tmp_path: Path) -> None:
@@ -106,3 +108,18 @@ def test_export_geometries_preserves_crs(data_dir: Path, tmp_path: Path) -> None
     result = gpd.read_file(output)
     assert result.crs is not None
     assert result.crs.to_epsg() == 2056
+
+
+def test_export_timeseries_empty_data(tmp_path: Path) -> None:
+    """export_timeseries with empty dict does not crash."""
+    output = tmp_path / "out.parquet"
+    export_timeseries({}, output, fmt="parquet")
+    assert not output.exists()
+
+
+def test_export_merged_empty_data(data_dir: Path, tmp_path: Path) -> None:
+    """export_merged with empty timeseries dict does not crash."""
+    attrs = load_attributes(data_dir)
+    output = tmp_path / "merged.parquet"
+    export_merged({}, attrs, output, fmt="parquet")
+    assert not output.exists()

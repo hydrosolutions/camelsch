@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 import os
 from pathlib import Path
@@ -221,14 +223,15 @@ def _basins_json(basin_ids: list[str], attr_df: pd.DataFrame | None) -> None:
 def _basins_csv(basin_ids: list[str], attr_df: pd.DataFrame | None) -> None:
     """Output basin list as CSV."""
     if attr_df is not None:
-        header = "basin_id," + ",".join(attr_df.columns)
-        typer.echo(header)
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(["basin_id", *list(attr_df.columns)])
         for bid in basin_ids:
             if bid in attr_df.index:
-                vals = ",".join(str(v) for v in attr_df.loc[bid])
-                typer.echo(f"{bid},{vals}")
+                writer.writerow([bid] + [attr_df.loc[bid, c] for c in attr_df.columns])
             else:
-                typer.echo(bid)
+                writer.writerow([bid] + [""] * len(attr_df.columns))
+        typer.echo(buf.getvalue(), nl=False)
     else:
         for bid in basin_ids:
             typer.echo(bid)
@@ -281,7 +284,7 @@ def attributes(
         export_attributes(df, output, fmt=_infer_format(output, fmt))
         console.print(f"[green]Attributes written to {output}[/green]")
     else:
-        typer.echo(df.to_csv())
+        typer.echo(df.to_csv(), nl=False)
 
 
 # ---------------------------------------------------------------------------
@@ -340,7 +343,7 @@ def timeseries(
         for bid, df in data.items():
             if len(data) > 1:
                 typer.echo(f"--- Basin {bid} ---")
-            typer.echo(df.to_csv())
+            typer.echo(df.to_csv(), nl=False)
 
 
 # ---------------------------------------------------------------------------
@@ -360,6 +363,9 @@ def export(
     ),
     crs: str | None = typer.Option(
         None, "--crs", help="Reproject geometries to CRS (e.g. EPSG:4326)."
+    ),
+    geo_format: str = typer.Option(
+        "gpkg", "--geo-format", help="Geometry format: gpkg or geojson."
     ),
 ) -> None:
     """Batch export: merge time series (+ optional attributes) into one file.
@@ -389,7 +395,7 @@ def export(
         from camelsch.geometries import load_geometries
 
         gdf = load_geometries(dd, basin_ids=bid_list, crs=crs)
-        geo_fmt = _infer_geo_format(output, fmt)
+        geo_fmt = _infer_geo_format(output, geo_format)
         geo_suffix = ".geojson" if geo_fmt == "geojson" else ".gpkg"
         geo_output = output.with_name(output.stem + "_geometry" + geo_suffix)
         export_geometries(gdf, geo_output, fmt=geo_fmt)

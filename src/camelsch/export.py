@@ -26,6 +26,9 @@ def export_timeseries(
     For CSV: single file if one basin, directory of files if multiple.
     """
     logger.debug("Exporting %d basin(s) as %s to %s", len(data), fmt, output)
+    if not data:
+        logger.warning("No data to export")
+        return
     if fmt == "parquet":
         frames = []
         for bid, df in data.items():
@@ -33,10 +36,12 @@ def export_timeseries(
             df.insert(0, "basin_id", bid)
             frames.append(df)
         combined = pd.concat(frames)
+        output.parent.mkdir(parents=True, exist_ok=True)
         combined.to_parquet(output)
     else:
         if len(data) == 1:
             bid, df = next(iter(data.items()))
+            output.parent.mkdir(parents=True, exist_ok=True)
             df.to_csv(output)
         else:
             output.mkdir(parents=True, exist_ok=True)
@@ -50,6 +55,7 @@ def export_attributes(
     fmt: Format = "csv",
 ) -> None:
     """Export attributes DataFrame to file."""
+    output.parent.mkdir(parents=True, exist_ok=True)
     if fmt == "parquet":
         df.to_parquet(output)
     else:
@@ -68,6 +74,9 @@ def export_merged(
     Static attributes are repeated for each row of a given basin.
     """
     logger.debug("Exporting merged data for %d basin(s) as %s to %s", len(timeseries), fmt, output)
+    if not timeseries:
+        logger.warning("No data to export")
+        return
     frames = []
     for bid, df in timeseries.items():
         df = df.copy()
@@ -81,6 +90,7 @@ def export_merged(
 
     combined = pd.concat(frames)
 
+    output.parent.mkdir(parents=True, exist_ok=True)
     if fmt == "parquet":
         combined.to_parquet(output)
     else:
