@@ -1,6 +1,6 @@
 [project]
 name = "camelsch"
-version = "0.1.0"
+version = "0.2.0"
 description = "CLI tool for extracting and working with CAMELS-CH hydrological data"
 readme = "README.md"
 license = "MIT"
@@ -13,6 +13,8 @@ dependencies = [
     "typer>=0.9.0",
     "rich>=13.0.0",
     "pyarrow>=14.0.0",
+    "geopandas>=0.14",
+    "shapely>=2.0",
 ]
 
 [project.urls]
@@ -43,6 +45,10 @@ warn_unused_configs = true
 
 [[tool.mypy.overrides]]
 module = ["pyarrow"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["geopandas", "shapely", "shapely.*", "fiona", "fiona.*", "pyogrio", "pyogrio.*"]
 ignore_missing_imports = true
 
 [project.optional-dependencies]

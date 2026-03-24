@@ -6,11 +6,13 @@ import logging
 from pathlib import Path
 from typing import Literal
 
+import geopandas as gpd
 import pandas as pd
 
 logger = logging.getLogger(__name__)
 
 Format = Literal["csv", "parquet"]
+GeoFormat = Literal["gpkg", "geojson"]
 
 
 def export_timeseries(
@@ -83,3 +85,25 @@ def export_merged(
         combined.to_parquet(output)
     else:
         combined.to_csv(output)
+
+
+def export_geometries(
+    gdf: gpd.GeoDataFrame,
+    output: Path,
+    fmt: GeoFormat = "gpkg",
+) -> None:
+    """Export catchment geometries to GeoPackage or GeoJSON.
+
+    Parameters
+    ----------
+    gdf:
+        GeoDataFrame with catchment geometries.
+    output:
+        Output file path.
+    fmt:
+        Output format — "gpkg" for GeoPackage, "geojson" for GeoJSON.
+    """
+    output.parent.mkdir(parents=True, exist_ok=True)
+    driver = "GPKG" if fmt == "gpkg" else "GeoJSON"
+    logger.debug("Exporting geometries as %s to %s", fmt, output)
+    gdf.to_file(output, driver=driver)

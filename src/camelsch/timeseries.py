@@ -162,3 +162,40 @@ def load_timeseries(
         result[bid] = df
 
     return result
+
+
+_SUM_PATTERNS: tuple[str, ...] = (
+    "precipitation",
+    "discharge",
+    "swe",
+    "intercept_et",
+    "intercept_storage",
+)
+
+
+def resample_annual(df: pd.DataFrame) -> pd.DataFrame:
+    """Resample daily time series to annual resolution.
+
+    Uses sum for precipitation, discharge, and SWE columns; mean for all
+    others (temperature, radiation, humidity, PET, ET, etc.).
+
+    The input must have a DatetimeIndex.
+
+    Parameters
+    ----------
+    df:
+        Daily time series DataFrame with DatetimeIndex.
+
+    Returns
+    -------
+    pd.DataFrame
+        Annual time series.
+    """
+    agg: dict[str, str] = {}
+    for col in df.columns:
+        col_lower = col.lower()
+        if any(pat in col_lower for pat in _SUM_PATTERNS):
+            agg[col] = "sum"
+        else:
+            agg[col] = "mean"
+    return df.resample("YE").agg(agg)  # type: ignore[arg-type]

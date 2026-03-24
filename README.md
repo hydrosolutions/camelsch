@@ -86,17 +86,40 @@ variables = camelsch.list_variables("./data/CAMELS_CH")
 
 ## Data reference
 
-CAMELS-CH provides daily hydrometeorological time series and static catchment attributes for 331 Swiss basins (1981-2020). Key variables include:
+CAMELS-CH provides daily hydrometeorological time series and static catchment attributes for 331 Swiss basins (1981-2020). The dataset contains 21 time series variables:
+
+**Observation-based (9 variables)**
 
 | Variable | Description |
 |---|---|
+| `discharge_vol` | Discharge volume (m³/s) |
+| `discharge_spec` | Specific discharge (mm/d) |
+| `waterlevel` | Water level (m) |
 | `precipitation` | Basin-mean daily precipitation (mm/d) |
-| `temperature` | Basin-mean daily temperature (deg C) |
-| `discharge_spec` | Observed specific discharge (mm/d) |
+| `temperature_min` | Minimum daily temperature (°C) |
+| `temperature_mean` | Mean daily temperature (°C) |
+| `temperature_max` | Maximum daily temperature (°C) |
+| `rel_sun_dur` | Relative sunshine duration (%) |
+| `swe` | Snow water equivalent (mm) |
+
+**Simulation-based (12 variables)**
+
+| Variable | Description |
+|---|---|
+| `discharge_vol_sim` | Simulated discharge volume (m³/s) |
 | `discharge_spec_sim` | Simulated specific discharge (mm/d) |
-| `pet` / `pet_sim` | Potential evapotranspiration (mm/d) |
-| `et` / `et_sim` | Actual evapotranspiration (mm/d) |
-| `snow_water_eq_sim` | Simulated snow water equivalent (mm) |
+| `precipitation_sim` | Simulated precipitation (mm/d) |
+| `temperature_sim` | Simulated temperature (°C) |
+| `radiation_sim` | Simulated radiation (W/m²) |
+| `sun_duration_sim` | Simulated sunshine duration (h) |
+| `wind_sim` | Simulated wind speed (m/s) |
+| `rel_humidity_sim` | Simulated relative humidity (%) |
+| `pet_sim` | Simulated potential evapotranspiration (mm/d) |
+| `et_sim` | Simulated actual evapotranspiration (mm/d) |
+| `intercept_et_sim` | Simulated interception evapotranspiration (mm/d) |
+| `intercept_storage_sim` | Simulated interception storage (mm) |
+
+Convenience aliases: `pet` → `pet_sim`, `et` → `et_sim`.
 
 Static attributes cover topography (`area`, `elev_mean`), climate (`p_mean`, `t_mean`), land cover, soil, and geology.
 

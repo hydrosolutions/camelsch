@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import geopandas as gpd
 import pandas as pd
 
 from camelsch.attributes import load_attributes
-from camelsch.export import export_attributes, export_merged, export_timeseries
+from camelsch.export import export_attributes, export_geometries, export_merged, export_timeseries
+from camelsch.geometries import load_geometries
 from camelsch.timeseries import load_timeseries
 
 
@@ -74,3 +76,33 @@ def test_export_merged(data_dir: Path, tmp_path: Path) -> None:
     # Should have timeseries columns plus attribute columns
     assert "discharge_spec" in df.columns
     assert "area" in df.columns
+
+
+def test_export_geometries_gpkg(data_dir: Path, tmp_path: Path) -> None:
+    """Exporting geometries to GeoPackage."""
+    gdf = load_geometries(data_dir)
+    output = tmp_path / "basins.gpkg"
+    export_geometries(gdf, output, fmt="gpkg")
+    assert output.exists()
+    result = gpd.read_file(output)
+    assert len(result) == 3
+
+
+def test_export_geometries_geojson(data_dir: Path, tmp_path: Path) -> None:
+    """Exporting geometries to GeoJSON."""
+    gdf = load_geometries(data_dir)
+    output = tmp_path / "basins.geojson"
+    export_geometries(gdf, output, fmt="geojson")
+    assert output.exists()
+    result = gpd.read_file(output)
+    assert len(result) == 3
+
+
+def test_export_geometries_preserves_crs(data_dir: Path, tmp_path: Path) -> None:
+    """Exported GeoPackage preserves the input CRS."""
+    gdf = load_geometries(data_dir)
+    output = tmp_path / "basins.gpkg"
+    export_geometries(gdf, output, fmt="gpkg")
+    result = gpd.read_file(output)
+    assert result.crs is not None
+    assert result.crs.to_epsg() == 2056

@@ -18,7 +18,7 @@ def test_version_flag() -> None:
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
     assert "camelsch" in result.output
-    assert "0.1.0" in result.output
+    assert "0.2.0" in result.output
 
 
 def test_info_missing_data_suggests_download() -> None:
@@ -187,3 +187,85 @@ def test_download_skip_existing(data_dir: Path) -> None:
     result = runner.invoke(app, ["download", "--dest", str(data_dir)])
     assert result.exit_code == 0
     assert "ready" in result.output.lower()
+
+
+def test_export_with_geometry(data_dir: Path, tmp_path: Path) -> None:
+    """export --include-geometry produces a geometry file alongside tabular output."""
+    out = tmp_path / "export.parquet"
+    result = runner.invoke(
+        app,
+        [
+            "export",
+            "--data-dir",
+            str(data_dir),
+            "--basins",
+            "2004",
+            "--output",
+            str(out),
+            "--include-geometry",
+        ],
+    )
+    assert result.exit_code == 0
+    geo_out = tmp_path / "export_geometry.gpkg"
+    assert geo_out.exists()
+
+
+def test_export_with_geometry_and_crs(data_dir: Path, tmp_path: Path) -> None:
+    """export --include-geometry --crs EPSG:4326 reprojects geometries."""
+    import geopandas as gpd
+
+    out = tmp_path / "export.parquet"
+    result = runner.invoke(
+        app,
+        [
+            "export",
+            "--data-dir",
+            str(data_dir),
+            "--basins",
+            "2004",
+            "--output",
+            str(out),
+            "--include-geometry",
+            "--crs",
+            "EPSG:4326",
+        ],
+    )
+    assert result.exit_code == 0
+    geo_out = tmp_path / "export_geometry.gpkg"
+    assert geo_out.exists()
+    gdf = gpd.read_file(geo_out)
+    assert gdf.crs is not None
+    assert gdf.crs.to_epsg() == 4326
+
+
+def test_timeseries_annual_resolution(data_dir: Path, tmp_path: Path) -> None:
+    """timeseries --resolution annual produces annual aggregation."""
+    out = tmp_path / "annual.csv"
+    result = runner.invoke(
+        app,
+        [
+            "timeseries",
+            "--data-dir",
+            str(data_dir),
+            "--basins",
+            "2004",
+            "--resolution",
+            "annual",
+            "--output",
+            str(out),
+        ],
+    )
+    assert result.exit_code == 0
+    assert out.exists()
+    import pandas as pd
+
+    df = pd.read_csv(out, index_col=0, parse_dates=True)
+    # Fixture has 5 rows all in Jan 1981 → annual = 1 row
+    assert len(df) == 1
+
+
+def test_info_shows_geometry_status(data_dir: Path) -> None:
+    """info command shows geometry availability."""
+    result = runner.invoke(app, ["info", "--data-dir", str(data_dir)])
+    assert result.exit_code == 0
+    assert "Geometry" in result.output

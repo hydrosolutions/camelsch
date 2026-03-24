@@ -15,6 +15,7 @@ from rich.table import Table
 from camelsch import __version__
 
 Format = Literal["csv", "parquet"]
+GeoFormat = Literal["gpkg", "geojson"]
 
 app = typer.Typer(
     name="camelsch",
@@ -74,6 +75,17 @@ def _infer_format(output: Path, fmt: str) -> Format:
     if fmt in ("csv", "parquet"):
         return fmt  # type: ignore[return-value]
     return "csv"
+
+
+def _infer_geo_format(output: Path, fmt: str) -> GeoFormat:
+    """Infer geometry output format from file extension, falling back to *fmt*."""
+    if output.suffix == ".geojson":
+        return "geojson"
+    if output.suffix == ".gpkg":
+        return "gpkg"
+    if fmt == "geojson":
+        return "geojson"
+    return "gpkg"
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +150,9 @@ def info(
     except FileNotFoundError:
         attr_count = 0
 
+    geom_dir = dd / "catchment_delineations"
+    geom_status = "Available (LV95 / EPSG:2056)" if geom_dir.exists() else "Not found"
+
     table = Table(title="CAMELS-CH Dataset Summary", show_header=False)
     table.add_column("Key", style="bold")
     table.add_column("Value")
@@ -146,6 +161,7 @@ def info(
     table.add_row("Time range", date_range)
     table.add_row("Variables", ", ".join(variables))
     table.add_row("Attributes", f"{attr_count} static features")
+    table.add_row("Geometry", geom_status)
     console.print(table)
 
 
@@ -284,6 +300,9 @@ def timeseries(
     end: str | None = typer.Option(None, help="End date (YYYY-MM-DD)."),
     output: Path | None = typer.Option(None, help="Output file path."),
     fmt: str = typer.Option("csv", "--format", help="Output format: csv or parquet."),
+    resolution: str = typer.Option(
+        "daily", "--resolution", help="Temporal resolution: daily or annual."
+    ),
 ) -> None:
     """Extract time series data for one or more basins.
 
@@ -309,6 +328,11 @@ def timeseries(
         end_date=end,
     )
 
+    if resolution == "annual":
+        from camelsch.timeseries import resample_annual
+
+        data = {bid: resample_annual(df) for bid, df in data.items()}
+
     if output:
         export_timeseries(data, output, fmt=_infer_format(output, fmt))
         console.print(f"[green]Time series written to {output}[/green]")
@@ -331,6 +355,12 @@ def export(
     output: Path = typer.Option(Path("camels_ch_export.parquet"), help="Output file path."),
     fmt: str = typer.Option("parquet", "--format", help="Output format: csv or parquet."),
     include_attrs: bool = typer.Option(False, help="Merge static attributes into output."),
+    include_geometry: bool = typer.Option(
+        False, "--include-geometry", help="Export catchment geometries."
+    ),
+    crs: str | None = typer.Option(
+        None, "--crs", help="Reproject geometries to CRS (e.g. EPSG:4326)."
+    ),
 ) -> None:
     """Batch export: merge time series (+ optional attributes) into one file.
 
@@ -353,5 +383,18 @@ def export(
         export_merged(data, attrs, output, fmt=resolved_fmt)
     else:
         export_timeseries(data, output, fmt=resolved_fmt)
+
+    if include_geometry:
+        from camelsch.export import export_geometries
+        from camelsch.geometries import load_geometries
+
+        gdf = load_geometries(dd, basin_ids=bid_list, crs=crs)
+        geo_fmt = _infer_geo_format(output, fmt)
+        geo_suffix = ".geojson" if geo_fmt == "geojson" else ".gpkg"
+        geo_output = output.with_name(output.stem + "_geometry" + geo_suffix)
+        export_geometries(gdf, geo_output, fmt=geo_fmt)
+        console.print(f"[green]Geometries written to {geo_output}[/green]")
+    elif crs is not None:
+        console.print("[yellow]--crs ignored without --include-geometry[/yellow]")
 
     console.print(f"[green]Exported {len(data)} basin(s) to {output}[/green]")

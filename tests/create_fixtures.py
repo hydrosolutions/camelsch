@@ -106,6 +106,28 @@ sim_data = {
 }
 
 
+def _write_geometry_fixtures() -> None:
+    """Write a synthetic shapefile with 3 basin polygons in EPSG:2056."""
+    import geopandas as gpd_
+    from shapely.geometry import box
+
+    # Small bounding boxes in approximate LV95 coordinates (Swiss extent)
+    geometries = [
+        box(600000, 200000, 605000, 205000),  # basin 2004
+        box(660000, 150000, 665000, 155000),  # basin 2007
+        box(720000, 120000, 730000, 130000),  # basin 3001
+    ]
+    gdf = gpd_.GeoDataFrame(
+        {"gauge_id": ["2004", "2007", "3001"], "area_km2": [77.5, 52.3, 1515.0]},
+        geometry=geometries,
+        crs="EPSG:2056",
+    )
+    shp_dir = FIXTURE_DIR / "catchment_delineations" / "LV95" / "Shapes_LV95"
+    shp_dir.mkdir(parents=True, exist_ok=True)
+    shp_path = shp_dir / "CAMELS_CH_catchments.shp"
+    gdf.to_file(shp_path)
+
+
 def main() -> None:
     # Write attribute files (Latin-1 for topo to test encoding)
     topo_path = FIXTURE_DIR / "static_attributes" / "CAMELS_CH_topographic_attributes.csv"
@@ -138,6 +160,8 @@ def main() -> None:
             FIXTURE_DIR / "timeseries" / "simulation_based" / f"CAMELS_CH_sim_based_{gauge_id}.csv"
         )
         sim_path.write_text(SIM_HEADER + "".join(rows), encoding="utf-8")
+
+    _write_geometry_fixtures()
 
     print("Fixtures created.")
 
