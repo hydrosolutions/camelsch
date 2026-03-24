@@ -1,6 +1,6 @@
 [project]
 name = "camelsch"
-version = "0.2.0"
+version = "0.3.0"
 description = "CLI tool for extracting and working with CAMELS-CH hydrological data"
 readme = "README.md"
 license = "MIT"

@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from camelsch.export import export_geometries as export_geometries
     from camelsch.geometries import load_geometries as load_geometries
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
