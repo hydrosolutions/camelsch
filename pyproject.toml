@@ -65,6 +65,8 @@ addopts = "--doctest-modules"
 
 [dependency-groups]
 dev = [
+    "ipykernel>=7.2.0",
+    "matplotlib>=3.10.8",
     "mypy>=1.10",
     "pandas-stubs>=2.0",
     "pytest>=9.0.2",

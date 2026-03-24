@@ -109,14 +109,65 @@ sim_data = {
 def _write_geometry_fixtures() -> None:
     """Write a synthetic shapefile with 3 basin polygons in EPSG:2056."""
     import geopandas as gpd_
-    from shapely.geometry import box
+    from shapely.geometry import Polygon
 
-    # Small bounding boxes in approximate LV95 coordinates (Swiss extent)
-    geometries = [
-        box(600000, 200000, 605000, 205000),  # basin 2004
-        box(660000, 150000, 665000, 155000),  # basin 2007
-        box(720000, 120000, 730000, 130000),  # basin 3001
-    ]
+    # Irregular, roughly elongated polygons in approximate LV95 coordinates.
+    # Catchments are narrower upstream (top) and wider downstream (bottom),
+    # like a leaf or fan shape.
+
+    # Basin 2004: centered ~(602500, 202500), ~5 km extent
+    poly_2004 = Polygon([
+        (602500, 205000),  # upstream tip
+        (603400, 204500),
+        (604200, 203500),
+        (604800, 202200),
+        (604500, 201000),
+        (603200, 200200),
+        (601800, 200000),
+        (600600, 200800),
+        (600200, 202000),
+        (600800, 203500),
+        (601700, 204600),
+        (602500, 205000),  # close
+    ])
+
+    # Basin 2007: centered ~(662500, 152500), ~5 km extent
+    poly_2007 = Polygon([
+        (662400, 155000),  # upstream tip
+        (663500, 154300),
+        (664200, 153200),
+        (664600, 151800),
+        (664100, 150600),
+        (663000, 150000),
+        (661600, 150100),
+        (660700, 150900),
+        (660300, 152100),
+        (660800, 153500),
+        (661700, 154500),
+        (662400, 155000),  # close
+    ])
+
+    # Basin 3001: centered ~(725000, 125000), ~10 km extent (much larger)
+    poly_3001 = Polygon([
+        (724500, 132000),  # upstream tip
+        (726500, 131000),
+        (728500, 129500),
+        (730000, 127500),
+        (730200, 125000),
+        (729500, 122500),
+        (727500, 120500),
+        (725000, 119500),
+        (722500, 119800),
+        (720500, 121000),
+        (719500, 123000),
+        (719800, 125500),
+        (720800, 127800),
+        (722000, 129800),
+        (723200, 131200),
+        (724500, 132000),  # close
+    ])
+
+    geometries = [poly_2004, poly_2007, poly_3001]
     gdf = gpd_.GeoDataFrame(
         {"gauge_id": ["2004", "2007", "3001"], "area_km2": [77.5, 52.3, 1515.0]},
         geometry=geometries,
